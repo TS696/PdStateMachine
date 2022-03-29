@@ -1,0 +1,9 @@
+{
+    "name": "com.ts696.pdstatemachine",
+    "displayName":"PdStateMachine",
+    "version":"1.0.0",
+    "unity": "2020.3",
+    "description": "Pushdown State Machine library for unity",
+    "license": "MIT",
+    "dependencies": {}
+}
