@@ -22,5 +22,10 @@ namespace PdStateMachine
         public virtual void OnResume()
         {
         }
+
+        public virtual bool HandleMessage(object message)
+        {
+            return false;
+        }
     }
 }

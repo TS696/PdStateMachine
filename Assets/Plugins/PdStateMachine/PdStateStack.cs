@@ -84,6 +84,32 @@ namespace PdStateMachine
             }
         }
 
+        public bool RaiseMessage(object param)
+        {
+            while (_processStack.Count > 0)
+            {
+                var state = _processStack.Peek();
+                if (state.Status == StateStatus.Disable)
+                {
+                    state.OnEntry();
+                }
+
+                if (state.Status == StateStatus.Pause)
+                {
+                    state.OnResume();
+                }
+
+                if (state.HandleMessage(param))
+                {
+                    return true;
+                }
+
+                PopState();
+            }
+
+            return false;
+        }
+
         public void Dispose()
         {
             PopAllStates();
@@ -113,6 +139,10 @@ namespace PdStateMachine
                     break;
                 case PopEvent _:
                     PopState();
+                    break;
+
+                case RaiseMessageEvent raiseMessageEvent:
+                    RaiseMessage(raiseMessageEvent.Message);
                     break;
             }
         }
@@ -145,6 +175,11 @@ namespace PdStateMachine
         public override void OnResume()
         {
             _current?.OnResume();
+        }
+
+        public override bool HandleMessage(object message)
+        {
+            return RaiseMessage(message);
         }
 
         private enum StateStatus
@@ -209,6 +244,11 @@ namespace PdStateMachine
             {
                 _state.OnResume();
                 Status = StateStatus.Active;
+            }
+
+            public bool HandleMessage(object message)
+            {
+                return _state.HandleMessage(message);
             }
         }
     }
