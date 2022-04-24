@@ -84,6 +84,22 @@ namespace PdStateMachine
             }
         }
 
+        public bool RaiseMessage(object param)
+        {
+            while (_processStack.Count > 0)
+            {
+                var state = _processStack.Peek();
+                if (state.HandleMessage(param))
+                {
+                    return true;
+                }
+
+                PopState();
+            }
+
+            return false;
+        }
+
         public void Dispose()
         {
             PopAllStates();
@@ -113,6 +129,10 @@ namespace PdStateMachine
                     break;
                 case PopEvent _:
                     PopState();
+                    break;
+
+                case RaiseMessageEvent raiseMessageEvent:
+                    RaiseMessage(raiseMessageEvent.Message);
                     break;
             }
         }
@@ -209,6 +229,11 @@ namespace PdStateMachine
             {
                 _state.OnResume();
                 Status = StateStatus.Active;
+            }
+
+            public bool HandleMessage(object message)
+            {
+                return _state.HandleMessage(message);
             }
         }
     }

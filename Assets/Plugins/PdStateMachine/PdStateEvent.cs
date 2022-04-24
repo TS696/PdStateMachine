@@ -25,6 +25,11 @@ namespace PdStateMachine
         {
             return new PushSubStatesEvent(states, popSelf);
         }
+
+        public static PdStateEvent RaiseMessage(object message)
+        {
+            return new RaiseMessageEvent(message);
+        }
     }
 
     internal sealed class ContinueEvent : PdStateEvent
@@ -57,5 +62,15 @@ namespace PdStateMachine
 
     internal sealed class PopEvent : PdStateEvent
     {
+    }
+
+    internal sealed class RaiseMessageEvent : PdStateEvent
+    {
+        public RaiseMessageEvent(object message)
+        {
+            Message = message;
+        }
+
+        public object Message { get; }
     }
 }
