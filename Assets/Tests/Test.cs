@@ -141,16 +141,61 @@ namespace Tests
             LogAssert.Expect(LogType.Log, "TestStateC Exit");
         }
 
+        [Test]
+        public void RaiseMessageWithNoHandle()
+        {
+            var stateStack = new PdStateStack();
+            var stateA = new TestState("TestStateA");
+            var stateB = new TestState("TestStateB");
+            stateStack.PushState(stateA);
+            stateStack.PushState(stateB);
+
+            stateStack.RaiseMessage(null);
+            stateStack.Dispose();
+            LogAssert.Expect(LogType.Log, "TestStateB Entry");
+            LogAssert.Expect(LogType.Log, "TestStateB HandleMessage");
+            LogAssert.Expect(LogType.Log, "TestStateB Exit");
+            LogAssert.Expect(LogType.Log, "TestStateA Entry");
+            LogAssert.Expect(LogType.Log, "TestStateA HandleMessage");
+            LogAssert.Expect(LogType.Log, "TestStateA Exit");
+        }
+
+        [Test]
+        public void RaiseMessageWithHandle()
+        {
+            var stateStack = new PdStateStack();
+            var stateA = new TestState("TestStateA");
+            var stateB = new TestState("TestStateB", null, _ => true);
+            var stateC = new TestState("TestStateC");
+
+            stateStack.PushState(stateA);
+            stateStack.PushState(stateB);
+            stateStack.PushState(stateC);
+
+            stateStack.RaiseMessage(null);
+            stateStack.Tick();
+            stateStack.Dispose();
+
+            LogAssert.Expect(LogType.Log, "TestStateC Entry");
+            LogAssert.Expect(LogType.Log, "TestStateC HandleMessage");
+            LogAssert.Expect(LogType.Log, "TestStateC Exit");
+            LogAssert.Expect(LogType.Log, "TestStateB Entry");
+            LogAssert.Expect(LogType.Log, "TestStateB HandleMessage");
+            LogAssert.Expect(LogType.Log, "TestStateB Tick");
+            LogAssert.Expect(LogType.Log, "TestStateB Exit");
+        }
 
         private class TestState : PdState
         {
             private readonly string _logName;
             private readonly Func<PdStateEvent> _onTick;
+            private readonly Func<object, bool> _handleMessage;
 
-            public TestState(string logName, Func<PdStateEvent> onTick = null)
+            public TestState(string logName, Func<PdStateEvent> onTick = null, Func<object, bool> handleMessage = null)
             {
                 _logName = logName;
                 _onTick = onTick;
+                _handleMessage = handleMessage;
             }
 
             public override void OnEntry()
@@ -177,6 +222,18 @@ namespace Tests
             public override void OnResume()
             {
                 Debug.Log($"{_logName} Resume");
+            }
+
+            public override bool HandleMessage(object message)
+            {
+                Debug.Log($"{_logName} HandleMessage");
+
+                if (_handleMessage != null)
+                {
+                    return _handleMessage.Invoke(message);
+                }
+
+                return false;
             }
         }
     }
