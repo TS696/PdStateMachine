@@ -89,6 +89,16 @@ namespace PdStateMachine
             while (_processStack.Count > 0)
             {
                 var state = _processStack.Peek();
+                if (state.Status == StateStatus.Disable)
+                {
+                    state.OnEntry();
+                }
+
+                if (state.Status == StateStatus.Pause)
+                {
+                    state.OnResume();
+                }
+
                 if (state.HandleMessage(param))
                 {
                     return true;
