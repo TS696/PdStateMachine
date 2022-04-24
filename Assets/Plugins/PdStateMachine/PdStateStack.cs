@@ -177,6 +177,11 @@ namespace PdStateMachine
             _current?.OnResume();
         }
 
+        public override bool HandleMessage(object message)
+        {
+            return RaiseMessage(message);
+        }
+
         private enum StateStatus
         {
             Disable,
