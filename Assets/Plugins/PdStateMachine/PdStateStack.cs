@@ -8,10 +8,21 @@ namespace PdStateMachine
     {
         private readonly Stack<PdStateHolder> _processStack = new Stack<PdStateHolder>();
         private readonly Stack<PdStateHolder> _holderPool = new Stack<PdStateHolder>(5);
+        private readonly Dictionary<Type, PdState> _stateInstances = new Dictionary<Type, PdState>();
 
         private PdStateHolder _current;
 
         public int ProcessCount => _processStack.Count;
+
+        public void RegisterState<T>(PdState state) where T : PdState
+        {
+            _stateInstances.Add(typeof(T), state);
+        }
+
+        private PdState GetRegisteredState(Type type)
+        {
+            return _stateInstances[type];
+        }
 
         public void PushState(PdState state)
         {
@@ -32,6 +43,11 @@ namespace PdStateMachine
             {
                 PushState(state);
             }
+        }
+
+        public void PushState<T>() where T : PdState
+        {
+            PushState(GetRegisteredState(typeof(T)));
         }
 
         public void Tick()
@@ -136,6 +152,14 @@ namespace PdStateMachine
                     }
 
                     PushStates(pushStatesEvent.States);
+                    break;
+                case PushRegisteredStateEvent pushRegisteredStateEvent:
+                    if (pushRegisteredStateEvent.PopSelf)
+                    {
+                        PopState();
+                    }
+
+                    PushState(GetRegisteredState(pushRegisteredStateEvent.Type));
                     break;
                 case PopEvent _:
                     PopState();
