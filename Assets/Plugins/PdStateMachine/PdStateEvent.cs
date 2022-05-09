@@ -1,3 +1,5 @@
+using System;
+
 namespace PdStateMachine
 {
     public abstract class PdStateEvent
@@ -24,6 +26,11 @@ namespace PdStateMachine
         public static PdStateEvent PushSubStates(PdState[] states, bool popSelf = false)
         {
             return new PushSubStatesEvent(states, popSelf);
+        }
+
+        public static PdStateEvent PushSubState<T>(bool popSelf = false) where T : PdState
+        {
+            return new PushRegisteredStateEvent(typeof(T), popSelf);
         }
 
         public static PdStateEvent RaiseMessage(object message)
@@ -57,6 +64,18 @@ namespace PdStateMachine
         }
 
         public PdState[] States { get; }
+        public bool PopSelf { get; }
+    }
+
+    internal sealed class PushRegisteredStateEvent : PdStateEvent
+    {
+        public PushRegisteredStateEvent(Type type, bool popSelf)
+        {
+            Type = type;
+            PopSelf = popSelf;
+        }
+
+        public Type Type { get; }
         public bool PopSelf { get; }
     }
 
