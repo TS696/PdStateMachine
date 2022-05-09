@@ -142,6 +142,46 @@ namespace Tests
         }
 
         [Test]
+        public void PushRegisteredState()
+        {
+            var stateStack = new PdStateStack();
+            var state = new TestState("TestState");
+
+            stateStack.RegisterState<TestState>(state);
+            stateStack.PushState<TestState>();
+
+            stateStack.Tick();
+
+            stateStack.Dispose();
+            LogAssert.Expect(LogType.Log, "TestState Entry");
+            LogAssert.Expect(LogType.Log, "TestState Tick");
+            LogAssert.Expect(LogType.Log, "TestState Exit");
+        }
+
+        [Test]
+        public void PushRegisteredSubState()
+        {
+            var stateStack = new PdStateStack();
+            var stateA = new TestState("TestStateA", () => PdStateEvent.PushSubState<TestState>());
+            var stateB = new TestState("TestStateB", PdStateEvent.Pop);
+
+            stateStack.RegisterState<TestState>(stateB);
+            stateStack.PushState(stateA);
+
+            stateStack.Tick();
+            stateStack.Tick();
+
+            stateStack.Dispose();
+            LogAssert.Expect(LogType.Log, "TestStateA Entry");
+            LogAssert.Expect(LogType.Log, "TestStateA Tick");
+            LogAssert.Expect(LogType.Log, "TestStateA Pause");
+            LogAssert.Expect(LogType.Log, "TestStateB Entry");
+            LogAssert.Expect(LogType.Log, "TestStateB Tick");
+            LogAssert.Expect(LogType.Log, "TestStateB Exit");
+            LogAssert.Expect(LogType.Log, "TestStateA Exit");
+        }
+
+        [Test]
         public void RaiseMessageWithNoHandle()
         {
             var stateStack = new PdStateStack();
