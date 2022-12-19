@@ -25,7 +25,7 @@ namespace PdStateMachine
             _stateInstances = new Dictionary<Type, PdState>();
         }
 
-        public void RegisterState<T>(PdState state) where T : PdState
+        public void RegisterState<T>(T state) where T : PdState
         {
             _stateInstances.Add(typeof(T), state);
         }
