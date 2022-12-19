@@ -33,6 +33,11 @@ namespace PdStateMachine
             return new PushRegisteredStateEvent(typeof(T), popSelf);
         }
 
+        public static PdStateEvent PushSubStates(Type[] stateTypes, bool popSelf = false)
+        {
+            return new PushRegisteredStatesEvent(stateTypes, popSelf);
+        }
+
         public static PdStateEvent RaiseMessage(object message)
         {
             return new RaiseMessageEvent(message);
@@ -76,6 +81,18 @@ namespace PdStateMachine
         }
 
         public Type Type { get; }
+        public bool PopSelf { get; }
+    }
+
+    internal sealed class PushRegisteredStatesEvent : PdStateEvent
+    {
+        public PushRegisteredStatesEvent(Type[] stateTypes, bool popSelf)
+        {
+            StateTypes = stateTypes;
+            PopSelf = popSelf;
+        }
+
+        public Type[] StateTypes { get; }
         public bool PopSelf { get; }
     }
 

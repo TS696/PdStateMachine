@@ -6,15 +6,26 @@ namespace PdStateMachine
 {
     public class PdStateStack : PdState, IDisposable
     {
-        private readonly Stack<PdStateHolder> _processStack = new Stack<PdStateHolder>();
-        private readonly Stack<PdStateHolder> _holderPool = new Stack<PdStateHolder>(5);
-        private readonly Dictionary<Type, PdState> _stateInstances = new Dictionary<Type, PdState>();
+        private readonly Stack<PdStateHolder> _processStack;
+        private readonly Stack<PdStateHolder> _holderPool;
+        private readonly Dictionary<Type, PdState> _stateInstances;
 
         private PdStateHolder _current;
 
         public int ProcessCount => _processStack.Count;
 
-        public void RegisterState<T>(PdState state) where T : PdState
+        public PdStateStack() : this(5)
+        {
+        }
+
+        public PdStateStack(int stackCapacity)
+        {
+            _processStack = new Stack<PdStateHolder>(stackCapacity);
+            _holderPool = new Stack<PdStateHolder>(stackCapacity);
+            _stateInstances = new Dictionary<Type, PdState>();
+        }
+
+        public void RegisterState<T>(T state) where T : PdState
         {
             _stateInstances.Add(typeof(T), state);
         }
@@ -48,6 +59,14 @@ namespace PdStateMachine
         public void PushState<T>() where T : PdState
         {
             PushState(GetRegisteredState(typeof(T)));
+        }
+
+        public void PushStates(params Type[] stateTypes)
+        {
+            for (var i = stateTypes.Length - 1; i >= 0; i--)
+            {
+                PushState(GetRegisteredState(stateTypes[i]));
+            }
         }
 
         public void Tick()
@@ -160,6 +179,14 @@ namespace PdStateMachine
                     }
 
                     PushState(GetRegisteredState(pushRegisteredStateEvent.Type));
+                    break;
+                case PushRegisteredStatesEvent pushRegisteredStatesEvent:
+                    if (pushRegisteredStatesEvent.PopSelf)
+                    {
+                        PopState();
+                    }
+                    
+                    PushStates(pushRegisteredStatesEvent.StateTypes);
                     break;
                 case PopEvent _:
                     PopState();
