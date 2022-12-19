@@ -61,6 +61,14 @@ namespace PdStateMachine
             PushState(GetRegisteredState(typeof(T)));
         }
 
+        public void PushStates(params Type[] stateTypes)
+        {
+            for (var i = stateTypes.Length - 1; i >= 0; i--)
+            {
+                PushState(GetRegisteredState(stateTypes[i]));
+            }
+        }
+
         public void Tick()
         {
             if (_current == null)
@@ -171,6 +179,14 @@ namespace PdStateMachine
                     }
 
                     PushState(GetRegisteredState(pushRegisteredStateEvent.Type));
+                    break;
+                case PushRegisteredStatesEvent pushRegisteredStatesEvent:
+                    if (pushRegisteredStatesEvent.PopSelf)
+                    {
+                        PopState();
+                    }
+                    
+                    PushStates(pushRegisteredStatesEvent.StateTypes);
                     break;
                 case PopEvent _:
                     PopState();
