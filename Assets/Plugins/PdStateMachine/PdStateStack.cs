@@ -6,13 +6,24 @@ namespace PdStateMachine
 {
     public class PdStateStack : PdState, IDisposable
     {
-        private readonly Stack<PdStateHolder> _processStack = new Stack<PdStateHolder>();
-        private readonly Stack<PdStateHolder> _holderPool = new Stack<PdStateHolder>(5);
-        private readonly Dictionary<Type, PdState> _stateInstances = new Dictionary<Type, PdState>();
+        private readonly Stack<PdStateHolder> _processStack;
+        private readonly Stack<PdStateHolder> _holderPool;
+        private readonly Dictionary<Type, PdState> _stateInstances;
 
         private PdStateHolder _current;
 
         public int ProcessCount => _processStack.Count;
+
+        public PdStateStack() : this(5)
+        {
+        }
+
+        public PdStateStack(int stackCapacity)
+        {
+            _processStack = new Stack<PdStateHolder>(stackCapacity);
+            _holderPool = new Stack<PdStateHolder>(stackCapacity);
+            _stateInstances = new Dictionary<Type, PdState>();
+        }
 
         public void RegisterState<T>(PdState state) where T : PdState
         {
