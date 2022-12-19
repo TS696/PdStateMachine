@@ -159,6 +159,25 @@ namespace Tests
         }
 
         [Test]
+        public void PushRegisteredStates()
+        {
+            var stateStack = new PdStateStack();
+            var stateA = new TestState("TestState", PdStateEvent.Pop);
+            stateStack.RegisterState(stateA);
+            stateStack.PushStates(typeof(TestState), typeof(TestState));
+            stateStack.Tick();
+            stateStack.Tick();
+            stateStack.Dispose();
+
+            LogAssert.Expect(LogType.Log, "TestState Entry");
+            LogAssert.Expect(LogType.Log, "TestState Tick");
+            LogAssert.Expect(LogType.Log, "TestState Exit");
+            LogAssert.Expect(LogType.Log, "TestState Entry");
+            LogAssert.Expect(LogType.Log, "TestState Tick");
+            LogAssert.Expect(LogType.Log, "TestState Exit");
+        }
+
+        [Test]
         public void PushRegisteredSubState()
         {
             var stateStack = new PdStateStack();
