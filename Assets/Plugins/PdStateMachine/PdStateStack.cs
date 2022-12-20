@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace PdStateMachine
 {
@@ -50,9 +49,9 @@ namespace PdStateMachine
 
         public void PushStates(params PdState[] states)
         {
-            foreach (var state in states.Reverse())
+            for (var i = states.Length - 1; i >= 0; i--)
             {
-                PushState(state);
+                PushState(states[i]);
             }
         }
 
