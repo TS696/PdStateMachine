@@ -22,6 +22,11 @@ namespace PdStateMachine
             _processStack = new Stack<PdStateHolder>(stackCapacity);
             _holderPool = new Stack<PdStateHolder>(stackCapacity);
             _stateInstances = new Dictionary<Type, PdState>();
+
+            for (var i = 0; i < stackCapacity; i++)
+            {
+                _holderPool.Push(new PdStateHolder());
+            }
         }
 
         public void RegisterState<T>(T state) where T : PdState
