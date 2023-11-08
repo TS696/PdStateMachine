@@ -43,7 +43,7 @@ namespace PdStateMachine
             _state.OnResume();
         }
 
-        public override bool HandleMessage(object message)
+        public override bool HandleMessage(StateMessage message)
         {
             return _state.HandleMessage(message);
         }

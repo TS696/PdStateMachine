@@ -283,7 +283,7 @@ namespace Tests
                 Debug.Log($"{_logName} Resume");
             }
 
-            public override bool HandleMessage(object message)
+            public override bool HandleMessage(StateMessage message)
             {
                 Debug.Log($"{_logName} HandleMessage");
 

@@ -123,7 +123,13 @@ namespace PdStateMachine
             }
         }
 
-        public bool RaiseMessage(object param)
+        public bool RaiseMessage(object message)
+        {
+            var stateMessage = new StateMessage(null, message);
+            return RaiseMessage(stateMessage);
+        }
+
+        private bool RaiseMessage(StateMessage stateMessage)
         {
             while (_processStack.Count > 0)
             {
@@ -138,7 +144,7 @@ namespace PdStateMachine
                     state.OnResume();
                 }
 
-                if (state.HandleMessage(param))
+                if (state.HandleMessage(stateMessage))
                 {
                     return true;
                 }
@@ -189,7 +195,7 @@ namespace PdStateMachine
                     {
                         PopState();
                     }
-                    
+
                     PushStates(pushRegisteredStatesEvent.StateTypes);
                     break;
                 case PopEvent _:
@@ -197,7 +203,7 @@ namespace PdStateMachine
                     break;
 
                 case RaiseMessageEvent raiseMessageEvent:
-                    RaiseMessage(raiseMessageEvent.Message);
+                    RaiseMessage(new StateMessage(_current.State, raiseMessageEvent.Message));
                     break;
             }
         }
@@ -232,7 +238,7 @@ namespace PdStateMachine
             _current?.OnResume();
         }
 
-        public override bool HandleMessage(object message)
+        public override bool HandleMessage(StateMessage message)
         {
             return RaiseMessage(message);
         }
@@ -261,6 +267,7 @@ namespace PdStateMachine
 
         private class PdStateHolder
         {
+            public PdState State => _state;
             private PdState _state;
 
             public void Initialize(PdState state)
@@ -301,7 +308,7 @@ namespace PdStateMachine
                 Status = StateStatus.Active;
             }
 
-            public bool HandleMessage(object message)
+            public bool HandleMessage(StateMessage message)
             {
                 return _state.HandleMessage(message);
             }
