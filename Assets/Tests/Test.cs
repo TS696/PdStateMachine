@@ -211,12 +211,9 @@ namespace Tests
 
             stateStack.RaiseMessage(null);
             stateStack.Dispose();
-            LogAssert.Expect(LogType.Log, "TestStateB Entry");
+
             LogAssert.Expect(LogType.Log, "TestStateB HandleMessage");
-            LogAssert.Expect(LogType.Log, "TestStateB Exit");
-            LogAssert.Expect(LogType.Log, "TestStateA Entry");
             LogAssert.Expect(LogType.Log, "TestStateA HandleMessage");
-            LogAssert.Expect(LogType.Log, "TestStateA Exit");
         }
 
         [Test]
@@ -235,11 +232,9 @@ namespace Tests
             stateStack.Tick();
             stateStack.Dispose();
 
-            LogAssert.Expect(LogType.Log, "TestStateC Entry");
             LogAssert.Expect(LogType.Log, "TestStateC HandleMessage");
-            LogAssert.Expect(LogType.Log, "TestStateC Exit");
-            LogAssert.Expect(LogType.Log, "TestStateB Entry");
             LogAssert.Expect(LogType.Log, "TestStateB HandleMessage");
+            LogAssert.Expect(LogType.Log, "TestStateB Entry");
             LogAssert.Expect(LogType.Log, "TestStateB Tick");
             LogAssert.Expect(LogType.Log, "TestStateB Exit");
         }
@@ -259,32 +254,43 @@ namespace Tests
 
             public override void OnEntry()
             {
+                Assert.IsNotNull(Context);
+                Assert.AreEqual(Context.Status, StateStatus.Disable);
                 Debug.Log($"{_logName} Entry");
             }
 
             public override PdStateEvent OnTick()
             {
+                Assert.IsNotNull(Context);
+                Assert.AreEqual(Context.Status, StateStatus.Active);
                 Debug.Log($"{_logName} Tick");
                 return _onTick?.Invoke();
             }
 
             public override void OnExit()
             {
+                Assert.IsNotNull(Context);
+                Assert.Contains(Context.Status, new[] { StateStatus.Active, StateStatus.Pause });
                 Debug.Log($"{_logName} Exit");
             }
 
             public override void OnPause()
             {
+                Assert.IsNotNull(Context);
+                Assert.AreEqual(Context.Status, StateStatus.Active);
                 Debug.Log($"{_logName} Pause");
             }
 
             public override void OnResume()
             {
+                Assert.IsNotNull(Context);
+                Assert.AreEqual(Context.Status, StateStatus.Pause);
                 Debug.Log($"{_logName} Resume");
             }
 
             public override bool HandleMessage(StateMessage message)
             {
+                Assert.IsNotNull(Context);
                 Debug.Log($"{_logName} HandleMessage");
 
                 if (_handleMessage != null)
