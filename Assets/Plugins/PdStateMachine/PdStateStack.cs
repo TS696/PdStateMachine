@@ -102,7 +102,11 @@ namespace PdStateMachine
             }
 
             var top = _processStack.Pop();
-            top.OnExit();
+            if (top.Status is StateStatus.Active or StateStatus.Pause)
+            {
+                top.OnExit();
+            }
+
             ReturnHolder(top);
 
             if (_processStack.Count > 0)
@@ -123,22 +127,18 @@ namespace PdStateMachine
             }
         }
 
-        public bool RaiseMessage(object param)
+        public bool RaiseMessage(object message)
+        {
+            var stateMessage = new StateMessage(null, message);
+            return RaiseMessage(stateMessage);
+        }
+
+        private bool RaiseMessage(StateMessage stateMessage)
         {
             while (_processStack.Count > 0)
             {
                 var state = _processStack.Peek();
-                if (state.Status == StateStatus.Disable)
-                {
-                    state.OnEntry();
-                }
-
-                if (state.Status == StateStatus.Pause)
-                {
-                    state.OnResume();
-                }
-
-                if (state.HandleMessage(param))
+                if (state.HandleMessage(stateMessage))
                 {
                     return true;
                 }
@@ -189,7 +189,7 @@ namespace PdStateMachine
                     {
                         PopState();
                     }
-                    
+
                     PushStates(pushRegisteredStatesEvent.StateTypes);
                     break;
                 case PopEvent _:
@@ -197,7 +197,7 @@ namespace PdStateMachine
                     break;
 
                 case RaiseMessageEvent raiseMessageEvent:
-                    RaiseMessage(raiseMessageEvent.Message);
+                    RaiseMessage(new StateMessage(_current.State, raiseMessageEvent.Message));
                     break;
             }
         }
@@ -232,16 +232,9 @@ namespace PdStateMachine
             _current?.OnResume();
         }
 
-        public override bool HandleMessage(object message)
+        public override bool HandleMessage(StateMessage message)
         {
             return RaiseMessage(message);
-        }
-
-        private enum StateStatus
-        {
-            Disable,
-            Active,
-            Pause
         }
 
         private PdStateHolder GetHolder()
@@ -261,20 +254,23 @@ namespace PdStateMachine
 
         private class PdStateHolder
         {
+            public PdState State => _state;
             private PdState _state;
+
+            private readonly PdStateContext _context = new();
+            public StateStatus Status => _context.Status;
 
             public void Initialize(PdState state)
             {
                 _state = state;
-                Status = StateStatus.Disable;
+                _context.Status = StateStatus.Disable;
             }
-
-            public StateStatus Status { get; private set; }
 
             public void OnEntry()
             {
+                _state.SetContext(_context);
                 _state.OnEntry();
-                Status = StateStatus.Active;
+                _context.Status = StateStatus.Active;
             }
 
             public PdStateEvent OnTick()
@@ -286,23 +282,25 @@ namespace PdStateMachine
             public void OnExit()
             {
                 _state.OnExit();
-                Status = StateStatus.Disable;
+                _context.Status = StateStatus.Disable;
             }
 
             public void OnPause()
             {
                 _state.OnPause();
-                Status = StateStatus.Pause;
+                _context.Status = StateStatus.Pause;
             }
 
             public void OnResume()
             {
+                _state.SetContext(_context);
                 _state.OnResume();
-                Status = StateStatus.Active;
+                _context.Status = StateStatus.Active;
             }
 
-            public bool HandleMessage(object message)
+            public bool HandleMessage(StateMessage message)
             {
+                _state.SetContext(_context);
                 return _state.HandleMessage(message);
             }
         }
