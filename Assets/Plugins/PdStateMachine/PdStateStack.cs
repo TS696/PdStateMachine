@@ -91,6 +91,10 @@ namespace PdStateMachine
             }
 
             var evt = _current?.OnTick();
+            if (evt == null)
+            {
+                throw new InvalidOperationException($"{nameof(PdStateEvent)} should not be null.");
+            }
             ExecuteEvent(evt);
         }
 
