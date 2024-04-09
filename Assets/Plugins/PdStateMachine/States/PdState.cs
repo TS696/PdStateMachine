@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace PdStateMachine
 {
     public abstract class PdState
@@ -12,7 +14,8 @@ namespace PdStateMachine
         public virtual void OnEntry()
         {
         }
-
+        
+        [return: NotNull]
         public virtual PdStateEvent OnTick()
         {
             return PdStateEvent.Continue();

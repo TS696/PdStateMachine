@@ -12,6 +12,8 @@ namespace PdStateMachine
         private PdStateHolder _current;
 
         public int ProcessCount => _processStack.Count;
+        public bool TickUntilContinue { get; set; }
+        public int LimitTickLoopNum { get; set; } = 1000;
 
         public PdStateStack() : this(5)
         {
@@ -75,23 +77,40 @@ namespace PdStateMachine
 
         public void Tick()
         {
-            if (_current == null)
+            var isContinue = true;
+            var loopCount = 0;
+            while (isContinue)
             {
-                return;
-            }
-
-            switch (_current.Status)
-            {
-                case StateStatus.Disable:
-                    _current?.OnEntry();
+                if (_current == null)
+                {
                     break;
-                case StateStatus.Pause:
-                    _current.OnResume();
-                    break;
-            }
+                }
 
-            var evt = _current?.OnTick();
-            ExecuteEvent(evt);
+                switch (_current.Status)
+                {
+                    case StateStatus.Disable:
+                        _current?.OnEntry();
+                        break;
+                    case StateStatus.Pause:
+                        _current.OnResume();
+                        break;
+                }
+
+                var evt = _current?.OnTick();
+                if (evt == null)
+                {
+                    throw new InvalidOperationException($"{nameof(PdStateEvent)} should not be null.");
+                }
+
+                ExecuteEvent(evt);
+
+                isContinue = TickUntilContinue && evt is not ContinueEvent;
+                loopCount++;
+                if (isContinue && LimitTickLoopNum > 0 && loopCount >= LimitTickLoopNum)
+                {
+                    throw new InvalidOperationException("Limit tick loop num exceeded.");
+                }
+            }
         }
 
         private void PopState()

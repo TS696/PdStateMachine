@@ -8,8 +8,9 @@ namespace Tests
 {
     public class Test
     {
-        [Test]
-        public void PushState()
+        [TestCase(true)]
+        [TestCase(false)]
+        public void PushState(bool tickUntilContinue)
         {
             var stateStack = new PdStateStack();
             stateStack.PushState(new TestState("TestState"));
@@ -21,8 +22,9 @@ namespace Tests
             LogAssert.Expect(LogType.Log, "TestState Exit");
         }
 
-        [Test]
-        public void PushStates()
+        [TestCase(true)]
+        [TestCase(false)]
+        public void PushStates(bool tickUntilContinue)
         {
             var stateStack = new PdStateStack();
             var stateA = new TestState("TestStateA", PdStateEvent.Pop);
@@ -40,10 +42,13 @@ namespace Tests
             LogAssert.Expect(LogType.Log, "TestStateB Exit");
         }
 
-        [Test]
-        public void PushStateTwice()
+        [TestCase(true)]
+        [TestCase(false)]
+        public void PushStateTwice(bool tickUntilContinue)
         {
             var stateStack = new PdStateStack();
+            stateStack.TickUntilContinue = tickUntilContinue;
+
             var stateA = new TestState("TestStateA");
             stateStack.PushState(stateA);
             stateStack.Tick();
@@ -66,10 +71,13 @@ namespace Tests
             LogAssert.Expect(LogType.Log, "TestStateA Exit");
         }
 
-        [Test]
-        public void PushSubState()
+        [TestCase(true)]
+        [TestCase(false)]
+        public void PushSubState(bool tickUntilContinue)
         {
             var stateStack = new PdStateStack();
+            stateStack.TickUntilContinue = tickUntilContinue;
+
             var stateA = new TestState("TestStateA", PdStateEvent.Pop);
             var isPushed = false;
             var stateB = new TestState("TestStateB", () =>
@@ -101,10 +109,13 @@ namespace Tests
             LogAssert.Expect(LogType.Log, "TestStateB Exit");
         }
 
-        [Test]
-        public void PushSubStates()
+        [TestCase(true)]
+        [TestCase(false)]
+        public void PushSubStates(bool tickUntilContinue)
         {
             var stateStack = new PdStateStack();
+            stateStack.TickUntilContinue = tickUntilContinue;
+
             var stateA = new TestState("TestStateA", PdStateEvent.Pop);
             var stateB = new TestState("TestStateB", PdStateEvent.Pop);
             var isPushed = false;
@@ -141,10 +152,13 @@ namespace Tests
             LogAssert.Expect(LogType.Log, "TestStateC Exit");
         }
 
-        [Test]
-        public void PushRegisteredState()
+        [TestCase(true)]
+        [TestCase(false)]
+        public void PushRegisteredState(bool tickUntilContinue)
         {
             var stateStack = new PdStateStack();
+            stateStack.TickUntilContinue = tickUntilContinue;
+
             var state = new TestState("TestState");
 
             stateStack.RegisterState<TestState>(state);
@@ -158,10 +172,13 @@ namespace Tests
             LogAssert.Expect(LogType.Log, "TestState Exit");
         }
 
-        [Test]
-        public void PushRegisteredStates()
+        [TestCase(true)]
+        [TestCase(false)]
+        public void PushRegisteredStates(bool tickUntilContinue)
         {
             var stateStack = new PdStateStack();
+            stateStack.TickUntilContinue = tickUntilContinue;
+
             var stateA = new TestState("TestState", PdStateEvent.Pop);
             stateStack.RegisterState(stateA);
             stateStack.PushStates(typeof(TestState), typeof(TestState));
@@ -177,11 +194,24 @@ namespace Tests
             LogAssert.Expect(LogType.Log, "TestState Exit");
         }
 
-        [Test]
-        public void PushRegisteredSubState()
+        [TestCase(true)]
+        [TestCase(false)]
+        public void PushRegisteredSubState(bool tickUntilContinue)
         {
             var stateStack = new PdStateStack();
-            var stateA = new TestState("TestStateA", () => PdStateEvent.PushSubState<TestState>());
+            stateStack.TickUntilContinue = tickUntilContinue;
+
+            var isPushed = false;
+            var stateA = new TestState("TestStateA", () =>
+            {
+                if (isPushed)
+                {
+                    return PdStateEvent.Pop();
+                }
+
+                isPushed = true;
+                return PdStateEvent.PushSubState<TestState>();
+            });
             var stateB = new TestState("TestStateB", PdStateEvent.Pop);
 
             stateStack.RegisterState<TestState>(stateB);
@@ -200,8 +230,9 @@ namespace Tests
             LogAssert.Expect(LogType.Log, "TestStateA Exit");
         }
 
-        [Test]
-        public void RaiseMessageWithNoHandle()
+        [TestCase(true)]
+        [TestCase(false)]
+        public void RaiseMessageWithNoHandle(bool tickUntilContinue)
         {
             var stateStack = new PdStateStack();
             var stateA = new TestState("TestStateA");
@@ -216,10 +247,13 @@ namespace Tests
             LogAssert.Expect(LogType.Log, "TestStateA HandleMessage");
         }
 
-        [Test]
-        public void RaiseMessageWithHandle()
+        [TestCase(true)]
+        [TestCase(false)]
+        public void RaiseMessageWithHandle(bool tickUntilContinue)
         {
             var stateStack = new PdStateStack();
+            stateStack.TickUntilContinue = tickUntilContinue;
+
             var stateA = new TestState("TestStateA");
             var stateB = new TestState("TestStateB", null, _ => true);
             var stateC = new TestState("TestStateC");
@@ -264,7 +298,7 @@ namespace Tests
                 Assert.IsNotNull(Context);
                 Assert.AreEqual(Context.Status, StateStatus.Active);
                 Debug.Log($"{_logName} Tick");
-                return _onTick?.Invoke();
+                return _onTick != null? _onTick.Invoke() : PdStateEvent.Continue();
             }
 
             public override void OnExit()
