@@ -264,7 +264,7 @@ namespace Tests
                 Assert.IsNotNull(Context);
                 Assert.AreEqual(Context.Status, StateStatus.Active);
                 Debug.Log($"{_logName} Tick");
-                return _onTick?.Invoke();
+                return _onTick != null? _onTick.Invoke() : PdStateEvent.Continue();
             }
 
             public override void OnExit()
