@@ -13,6 +13,8 @@ namespace Tests
         public void PushState(bool tickUntilContinue)
         {
             var stateStack = new PdStateStack();
+            stateStack.TickUntilContinue = tickUntilContinue;
+
             stateStack.PushState(new TestState("TestState"));
             stateStack.Tick();
             stateStack.Dispose();
@@ -27,6 +29,8 @@ namespace Tests
         public void PushStates(bool tickUntilContinue)
         {
             var stateStack = new PdStateStack();
+            stateStack.TickUntilContinue = tickUntilContinue;
+
             var stateA = new TestState("TestStateA", PdStateEvent.Pop);
             var stateB = new TestState("TestStateB");
             stateStack.PushStates(stateA, stateB);
@@ -235,6 +239,8 @@ namespace Tests
         public void RaiseMessageWithNoHandle(bool tickUntilContinue)
         {
             var stateStack = new PdStateStack();
+            stateStack.TickUntilContinue = tickUntilContinue;
+
             var stateA = new TestState("TestStateA");
             var stateB = new TestState("TestStateB");
             stateStack.PushState(stateA);
