@@ -246,7 +246,7 @@ namespace Tests
             stateStack.PushState(stateA);
             stateStack.PushState(stateB);
 
-            stateStack.RaiseMessage(null);
+            stateStack.RaiseMessage(new TestStateMessage());
             stateStack.Dispose();
 
             LogAssert.Expect(LogType.Log, "TestStateB HandleMessage");
@@ -268,7 +268,7 @@ namespace Tests
             stateStack.PushState(stateB);
             stateStack.PushState(stateC);
 
-            stateStack.RaiseMessage(null);
+            stateStack.RaiseMessage(new TestStateMessage());
             stateStack.Tick();
             stateStack.Dispose();
 
@@ -279,7 +279,12 @@ namespace Tests
             LogAssert.Expect(LogType.Log, "TestStateB Exit");
         }
 
-        private class TestState : PdState
+        private class TestStateMessage : IStateMessage
+        {
+            public object Message;
+        }
+
+        private class TestState : PdState, IStateMessageReceiver<TestStateMessage>
         {
             private readonly string _logName;
             private readonly Func<PdStateEvent> _onTick;
@@ -304,7 +309,7 @@ namespace Tests
                 Assert.IsNotNull(Context);
                 Assert.AreEqual(Context.Status, StateStatus.Active);
                 Debug.Log($"{_logName} Tick");
-                return _onTick != null? _onTick.Invoke() : PdStateEvent.Continue();
+                return _onTick != null ? _onTick.Invoke() : PdStateEvent.Continue();
             }
 
             public override void OnExit()
@@ -328,14 +333,13 @@ namespace Tests
                 Debug.Log($"{_logName} Resume");
             }
 
-            public override bool HandleMessage(StateMessage message)
+            public bool HandleMessage(TestStateMessage stateMessage, PdState sender)
             {
                 Assert.IsNotNull(Context);
                 Debug.Log($"{_logName} HandleMessage");
-
                 if (_handleMessage != null)
                 {
-                    return _handleMessage.Invoke(message);
+                    return _handleMessage.Invoke(stateMessage.Message);
                 }
 
                 return false;
