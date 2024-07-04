@@ -135,7 +135,7 @@ namespace PdStateMachine
             return _instance;
         }
 
-        public StateMessageHandler<T> _messageHandler;
+        private readonly StateMessageHandler<T> _messageHandler = new();
         public override IStateMessageHandler MessageHandler => _messageHandler;
     }
 }
