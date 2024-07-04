@@ -293,6 +293,30 @@ namespace Tests
             LogAssert.Expect(LogType.Log, "TestStateB Exit");
         }
 
+        [TestCase(true)]
+        [TestCase(false)]
+        public void RaiseMessageFromState(bool tickUntilContinue)
+        {
+            var stateStack = new PdStateStack();
+            stateStack.TickUntilContinue = tickUntilContinue;
+
+            var stateA = new TestState("TestStateA");
+            var stateB = new TestState("TestStateB", () => PdStateEvent.RaiseMessage(new TestStateMessage()));
+            stateStack.PushState(stateA);
+            stateStack.PushState(stateB);
+
+            stateStack.Tick();
+            stateStack.Tick();
+
+            stateStack.Dispose();
+            
+            LogAssert.Expect(LogType.Log, "TestStateB Entry");
+            LogAssert.Expect(LogType.Log, "TestStateB Tick");
+            LogAssert.Expect(LogType.Log, "TestStateB HandleMessage");
+            LogAssert.Expect(LogType.Log, "TestStateB Exit");
+            LogAssert.Expect(LogType.Log, "TestStateA HandleMessage");
+        }
+
         private class TestStateMessage : IStateMessage
         {
             public object Message;
