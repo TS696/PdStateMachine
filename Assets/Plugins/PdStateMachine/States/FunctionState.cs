@@ -9,17 +9,15 @@ namespace PdStateMachine
         private readonly Action _onExit;
         private readonly Action _onPause;
         private readonly Action _onResume;
-        private readonly Func<StateMessage, bool> _handleMessage;
 
         public FunctionState(Action onEntry = null, Func<PdStateEvent> onTick = null, Action onExit = null,
-            Action onPause = null, Action onResume = null, Func<StateMessage, bool> handleMessage = null)
+            Action onPause = null, Action onResume = null)
         {
             _onEntry = onEntry;
             _onTick = onTick;
             _onExit = onExit;
             _onPause = onPause;
             _onResume = onResume;
-            _handleMessage = handleMessage;
         }
 
         public override void OnEntry()
@@ -50,16 +48,6 @@ namespace PdStateMachine
         public override void OnResume()
         {
             _onResume?.Invoke();
-        }
-
-        public override bool HandleMessage(StateMessage message)
-        {
-            if (_handleMessage == null)
-            {
-                return false;
-            }
-
-            return _handleMessage.Invoke(message);
         }
     }
 }

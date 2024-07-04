@@ -34,9 +34,9 @@ namespace PdStateMachine
             return PushRegisteredStatesEvent.GetInstance(stateTypes, popSelf);
         }
 
-        public static PdStateEvent RaiseMessage(object message)
+        public static PdStateEvent RaiseMessage<T>(T message) where T : IStateMessage
         {
-            return RaiseMessageEvent.GetInstance(message);
+            return RaiseMessageEvent<T>.GetInstance(message);
         }
     }
 
@@ -120,16 +120,22 @@ namespace PdStateMachine
         }
     }
 
-    internal sealed class RaiseMessageEvent : PdStateEvent
+    internal abstract class RaiseMessageEvent : PdStateEvent
     {
-        private static readonly RaiseMessageEvent _instance = new RaiseMessageEvent();
+        public abstract IStateMessageHandler MessageHandler { get; }
+    }
 
-        public static RaiseMessageEvent GetInstance(object message)
+    internal sealed class RaiseMessageEvent<T> : RaiseMessageEvent where T : IStateMessage
+    {
+        private static readonly RaiseMessageEvent<T> _instance = new RaiseMessageEvent<T>();
+
+        public static RaiseMessageEvent<T> GetInstance(T message)
         {
-            _instance.Message = message;
+            _instance._messageHandler.Message = message;
             return _instance;
         }
 
-        public object Message { get; private set; }
+        public StateMessageHandler<T> _messageHandler;
+        public override IStateMessageHandler MessageHandler => _messageHandler;
     }
 }

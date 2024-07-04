@@ -15,6 +15,8 @@ namespace PdStateMachine
         public bool TickUntilContinue { get; set; }
         public int LimitTickLoopNum { get; set; } = 1000;
 
+        public event Action<IStateMessage, PdState> UnhandledMessage;
+
         public PdStateStack() : this(5)
         {
         }
@@ -146,24 +148,29 @@ namespace PdStateMachine
             }
         }
 
-        public bool RaiseMessage(object message)
+        public bool RaiseMessage<T>(T message) where T : IStateMessage
         {
-            var stateMessage = new StateMessage(null, message);
-            return RaiseMessage(stateMessage);
+            var messageHandler = new StateMessageHandler<T>
+            {
+                Message = message
+            };
+            return RaiseMessage(messageHandler, null);
         }
 
-        private bool RaiseMessage(StateMessage stateMessage)
+        private bool RaiseMessage(IStateMessageHandler messageHandler, PdState sender)
         {
             while (_processStack.Count > 0)
             {
                 var state = _processStack.Peek();
-                if (state.HandleMessage(stateMessage))
+                if (state.HandleMessage(messageHandler, sender))
                 {
                     return true;
                 }
 
                 PopState();
             }
+            
+            UnhandledMessage?.Invoke(messageHandler.RawMessage, sender);
 
             return false;
         }
@@ -216,7 +223,7 @@ namespace PdStateMachine
                     break;
 
                 case RaiseMessageEvent raiseMessageEvent:
-                    RaiseMessage(new StateMessage(_current.State, raiseMessageEvent.Message));
+                    RaiseMessage(raiseMessageEvent.MessageHandler, _current.State);
                     break;
             }
         }
@@ -249,11 +256,6 @@ namespace PdStateMachine
         public override void OnResume()
         {
             _current?.OnResume();
-        }
-
-        public override bool HandleMessage(StateMessage message)
-        {
-            return RaiseMessage(message);
         }
 
         private PdStateHolder GetHolder()
@@ -317,10 +319,10 @@ namespace PdStateMachine
                 _context.Status = StateStatus.Active;
             }
 
-            public bool HandleMessage(StateMessage message)
+            public bool HandleMessage(IStateMessageHandler handler, PdState sender)
             {
                 _state.SetContext(_context);
-                return _state.HandleMessage(message);
+                return handler.TryRaise(_state, sender);
             }
         }
     }

@@ -245,12 +245,17 @@ namespace Tests
             var stateB = new TestState("TestStateB");
             stateStack.PushState(stateA);
             stateStack.PushState(stateB);
+            stateStack.UnhandledMessage += (_, _) =>
+            {
+                Debug.Log("UnhandledMessage");
+            };
 
-            stateStack.RaiseMessage(null);
+            stateStack.RaiseMessage(new TestStateMessage());
             stateStack.Dispose();
 
             LogAssert.Expect(LogType.Log, "TestStateB HandleMessage");
             LogAssert.Expect(LogType.Log, "TestStateA HandleMessage");
+            LogAssert.Expect(LogType.Log, "UnhandledMessage");
         }
 
         [TestCase(true)]
@@ -261,31 +266,45 @@ namespace Tests
             stateStack.TickUntilContinue = tickUntilContinue;
 
             var stateA = new TestState("TestStateA");
-            var stateB = new TestState("TestStateB", null, _ => true);
+            var stateB = new TestState("TestStateB", null, m =>
+            {
+                Debug.Log(m.Message);
+                return true;
+            });
             var stateC = new TestState("TestStateC");
 
             stateStack.PushState(stateA);
             stateStack.PushState(stateB);
             stateStack.PushState(stateC);
+            stateStack.UnhandledMessage += (_, _) =>
+            {
+                Assert.Fail();
+            };
 
-            stateStack.RaiseMessage(null);
+            stateStack.RaiseMessage(new TestStateMessage() { Message = "Handle" });
             stateStack.Tick();
             stateStack.Dispose();
 
             LogAssert.Expect(LogType.Log, "TestStateC HandleMessage");
             LogAssert.Expect(LogType.Log, "TestStateB HandleMessage");
+            LogAssert.Expect(LogType.Log, "Handle");
             LogAssert.Expect(LogType.Log, "TestStateB Entry");
             LogAssert.Expect(LogType.Log, "TestStateB Tick");
             LogAssert.Expect(LogType.Log, "TestStateB Exit");
         }
 
-        private class TestState : PdState
+        private class TestStateMessage : IStateMessage
+        {
+            public object Message;
+        }
+
+        private class TestState : PdState, IStateMessageReceiver<TestStateMessage>
         {
             private readonly string _logName;
             private readonly Func<PdStateEvent> _onTick;
-            private readonly Func<object, bool> _handleMessage;
+            private readonly Func<TestStateMessage, bool> _handleMessage;
 
-            public TestState(string logName, Func<PdStateEvent> onTick = null, Func<object, bool> handleMessage = null)
+            public TestState(string logName, Func<PdStateEvent> onTick = null, Func<TestStateMessage, bool> handleMessage = null)
             {
                 _logName = logName;
                 _onTick = onTick;
@@ -304,7 +323,7 @@ namespace Tests
                 Assert.IsNotNull(Context);
                 Assert.AreEqual(Context.Status, StateStatus.Active);
                 Debug.Log($"{_logName} Tick");
-                return _onTick != null? _onTick.Invoke() : PdStateEvent.Continue();
+                return _onTick != null ? _onTick.Invoke() : PdStateEvent.Continue();
             }
 
             public override void OnExit()
@@ -328,14 +347,13 @@ namespace Tests
                 Debug.Log($"{_logName} Resume");
             }
 
-            public override bool HandleMessage(StateMessage message)
+            public bool HandleMessage(TestStateMessage stateMessage, PdState sender)
             {
                 Assert.IsNotNull(Context);
                 Debug.Log($"{_logName} HandleMessage");
-
                 if (_handleMessage != null)
                 {
-                    return _handleMessage.Invoke(message);
+                    return _handleMessage.Invoke(stateMessage);
                 }
 
                 return false;

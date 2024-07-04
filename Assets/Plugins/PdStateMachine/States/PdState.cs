@@ -32,18 +32,5 @@ namespace PdStateMachine
         public virtual void OnResume()
         {
         }
-
-        public virtual bool HandleMessage(StateMessage message)
-        {
-#pragma warning disable 0618
-            return HandleMessage(message.Message);
-#pragma warning restore 0618
-        }
-
-        [System.Obsolete("please override `HandleMessage(StateMessage message)` instead.", false)]
-        public virtual bool HandleMessage(object message)
-        {
-            return false;
-        }
     }
 }
