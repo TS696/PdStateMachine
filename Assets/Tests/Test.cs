@@ -325,10 +325,12 @@ namespace Tests
         private class TestState : PdState, IStateMessageReceiver<TestStateMessage>
         {
             private readonly string _logName;
-            private readonly Func<PdStateEvent> _onTick;
+            private readonly Func<PdStateEventHandle> _onTick;
             private readonly Func<TestStateMessage, bool> _handleMessage;
 
-            public TestState(string logName, Func<PdStateEvent> onTick = null, Func<TestStateMessage, bool> handleMessage = null)
+            private PdStateEventHandle _handleCache;
+
+            public TestState(string logName, Func<PdStateEventHandle> onTick = null, Func<TestStateMessage, bool> handleMessage = null)
             {
                 _logName = logName;
                 _onTick = onTick;
@@ -342,7 +344,7 @@ namespace Tests
                 Debug.Log($"{_logName} Entry");
             }
 
-            public override PdStateEvent OnTick()
+            public override PdStateEventHandle OnTick()
             {
                 Assert.IsNotNull(Context);
                 Assert.AreEqual(Context.Status, StateStatus.Active);

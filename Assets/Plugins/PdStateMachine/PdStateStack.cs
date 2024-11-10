@@ -91,22 +91,27 @@ namespace PdStateMachine
                 switch (_current.Status)
                 {
                     case StateStatus.Disable:
-                        _current?.OnEntry();
+                        _current.OnEntry();
                         break;
                     case StateStatus.Pause:
                         _current.OnResume();
                         break;
                 }
 
-                var evt = _current?.OnTick();
-                if (evt == null)
+                var eventHandle = _current.OnTick();
+                if (eventHandle.Event == null)
                 {
                     throw new InvalidOperationException($"{nameof(PdStateEvent)} should not be null.");
                 }
 
-                ExecuteEvent(evt);
+                if (eventHandle.Version != eventHandle.Event.Version)
+                {
+                    throw new InvalidOperationException("PdStateEvent version mismatch. PdStateEvent cannot be reused.");
+                }
 
-                isContinue = TickUntilContinue && evt is not ContinueEvent;
+                ExecuteEvent(eventHandle.Event);
+
+                isContinue = TickUntilContinue && eventHandle.Event is not ContinueEvent;
                 loopCount++;
                 if (isContinue && LimitTickLoopNum > 0 && loopCount >= LimitTickLoopNum)
                 {
@@ -239,7 +244,7 @@ namespace PdStateMachine
         {
         }
 
-        public override PdStateEvent OnTick()
+        public override PdStateEventHandle OnTick()
         {
             if (ProcessCount <= 0)
             {
@@ -301,7 +306,7 @@ namespace PdStateMachine
                 _context.Status = StateStatus.Active;
             }
 
-            public PdStateEvent OnTick()
+            public PdStateEventHandle OnTick()
             {
                 var evt = _state.OnTick();
                 return evt;
