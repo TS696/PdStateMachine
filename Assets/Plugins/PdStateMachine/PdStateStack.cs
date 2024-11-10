@@ -189,8 +189,7 @@ namespace PdStateMachine
         {
             switch (pdStateEvent)
             {
-                case ContinueEvent continueEvent:
-                    ContinueEvent.ReturnInstance(continueEvent);
+                case ContinueEvent _:
                     break;
                 case PushSubStateEvent pushStateEvent:
                     if (pushStateEvent.PopSelf)
@@ -228,9 +227,8 @@ namespace PdStateMachine
                     PushStates(pushRegisteredStatesEvent.StateTypes);
                     PushRegisteredStatesEvent.ReturnInstance(pushRegisteredStatesEvent);
                     break;
-                case PopEvent popEvent:
+                case PopEvent _:
                     PopState();
-                    PopEvent.ReturnInstance(popEvent);
                     break;
 
                 case RaiseMessageEvent raiseMessageEvent:
