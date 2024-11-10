@@ -4,14 +4,14 @@ namespace PdStateMachine
 {
     public abstract class PdEnumerableState : PdState
     {
-        private IEnumerator<PdStateEvent> _enumerator;
+        private IEnumerator<PdStateEventHandle> _enumerator;
 
         public override void OnEntry()
         {
             _enumerator = Execute();
         }
 
-        public override PdStateEvent OnTick()
+        public override PdStateEventHandle OnTick()
         {
             if (_enumerator.MoveNext())
             {
@@ -21,6 +21,6 @@ namespace PdStateMachine
             return PdStateEvent.Pop();
         }
 
-        protected abstract IEnumerator<PdStateEvent> Execute();
+        protected abstract IEnumerator<PdStateEventHandle> Execute();
     }
 }

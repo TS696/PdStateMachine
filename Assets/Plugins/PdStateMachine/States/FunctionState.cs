@@ -5,12 +5,12 @@ namespace PdStateMachine
     public class FunctionState : PdState
     {
         private readonly Action _onEntry;
-        private readonly Func<PdStateEvent> _onTick;
+        private readonly Func<PdStateEventHandle> _onTick;
         private readonly Action _onExit;
         private readonly Action _onPause;
         private readonly Action _onResume;
 
-        public FunctionState(Action onEntry = null, Func<PdStateEvent> onTick = null, Action onExit = null,
+        public FunctionState(Action onEntry = null, Func<PdStateEventHandle> onTick = null, Action onExit = null,
             Action onPause = null, Action onResume = null)
         {
             _onEntry = onEntry;
@@ -25,7 +25,7 @@ namespace PdStateMachine
             _onEntry?.Invoke();
         }
 
-        public override PdStateEvent OnTick()
+        public override PdStateEventHandle OnTick()
         {
             if (_onTick == null)
             {

@@ -18,7 +18,7 @@ namespace PdStateMachine
             _state.OnEntry();
         }
 
-        public override PdStateEvent OnTick()
+        public override PdStateEventHandle OnTick()
         {
             if (!_condition.Invoke())
             {

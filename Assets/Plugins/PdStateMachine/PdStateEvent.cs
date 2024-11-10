@@ -1,141 +1,145 @@
 using System;
+using UnityEngine.Pool;
 
 namespace PdStateMachine
 {
+    public readonly struct PdStateEventHandle
+    {
+        internal readonly long Version;
+        internal readonly PdStateEvent Event;
+
+        internal PdStateEventHandle(PdStateEvent evt)
+        {
+            Version = evt.Version;
+            Event = evt;
+        }
+    }
+
     public abstract class PdStateEvent
     {
-        public static PdStateEvent Pop()
+        internal long Version { get; set; }
+        
+        public static PdStateEventHandle Pop()
         {
-            return PopEvent.GetInstance();
+            return new PdStateEventHandle(PopEvent.GetInstance());
         }
 
-        public static PdStateEvent Continue()
+        public static PdStateEventHandle Continue()
         {
-            return ContinueEvent.GetInstance();
+            return new PdStateEventHandle(ContinueEvent.GetInstance());
         }
 
-        public static PdStateEvent PushSubState(PdState state, bool popSelf = false)
+        public static PdStateEventHandle PushSubState(PdState state, bool popSelf = false)
         {
-            return PushSubStateEvent.GetInstance(state, popSelf);
+            return new PdStateEventHandle(PushSubStateEvent.GetInstance(state, popSelf));
         }
 
-        public static PdStateEvent PushSubStates(PdState[] states, bool popSelf = false)
+        public static PdStateEventHandle PushSubStates(PdState[] states, bool popSelf = false)
         {
-            return PushSubStatesEvent.GetInstance(states, popSelf);
+            return new PdStateEventHandle(PushSubStatesEvent.GetInstance(states, popSelf));
         }
 
-        public static PdStateEvent PushSubState<T>(bool popSelf = false) where T : PdState
+        public static PdStateEventHandle PushSubState<T>(bool popSelf = false) where T : PdState
         {
-            return PushRegisteredStateEvent.GetInstance(typeof(T), popSelf);
+            return new PdStateEventHandle(PushRegisteredStateEvent.GetInstance(typeof(T), popSelf));
         }
 
-        public static PdStateEvent PushSubStates(Type[] stateTypes, bool popSelf = false)
+        public static PdStateEventHandle PushSubStates(Type[] stateTypes, bool popSelf = false)
         {
-            return PushRegisteredStatesEvent.GetInstance(stateTypes, popSelf);
+            return new PdStateEventHandle(PushRegisteredStatesEvent.GetInstance(stateTypes, popSelf));
         }
 
-        public static PdStateEvent RaiseMessage<T>(T message) where T : IStateMessage
+        public static PdStateEventHandle RaiseMessage<T>(T message) where T : IStateMessage
         {
-            return RaiseMessageEvent<T>.GetInstance(message);
-        }
-    }
-
-    internal sealed class ContinueEvent : PdStateEvent
-    {
-        private static readonly ContinueEvent _instance = new ContinueEvent();
-
-        public static ContinueEvent GetInstance()
-        {
-            return _instance;
+            return new PdStateEventHandle(RaiseMessageEvent.GetInstance(message));
         }
     }
 
-    internal sealed class PushSubStateEvent : PdStateEvent
+    internal abstract class PdStateEvent<T> : PdStateEvent where T : PdStateEvent, new()
     {
-        private static readonly PushSubStateEvent _instance = new PushSubStateEvent();
+        private static readonly ObjectPool<T> eventPool = new(createFunc: () => new T(), actionOnRelease: x => x.Version++);
 
+        internal static T GetInstance() => eventPool.Get();
+        internal static void ReturnInstance(T instance) => eventPool.Release(instance);
+    }
+
+    internal sealed class ContinueEvent : PdStateEvent<ContinueEvent>
+    {
+    }
+
+    internal sealed class PushSubStateEvent : PdStateEvent<PushSubStateEvent>
+    {
         public static PushSubStateEvent GetInstance(PdState state, bool popSelf)
         {
-            _instance.State = state;
-            _instance.PopSelf = popSelf;
-            return _instance;
+            var instance = GetInstance();
+            instance.State = state;
+            instance.PopSelf = popSelf;
+            return instance;
         }
 
         public PdState State { get; private set; }
         public bool PopSelf { get; private set; }
     }
 
-    internal sealed class PushSubStatesEvent : PdStateEvent
+    internal sealed class PushSubStatesEvent : PdStateEvent<PushSubStatesEvent>
     {
-        private static readonly PushSubStatesEvent _instance = new PushSubStatesEvent();
-
         public static PushSubStatesEvent GetInstance(PdState[] states, bool popSelf)
         {
-            _instance.States = states;
-            _instance.PopSelf = popSelf;
-            return _instance;
+            var instance = GetInstance();
+            instance.States = states;
+            instance.PopSelf = popSelf;
+            return instance;
         }
 
         public PdState[] States { get; private set; }
         public bool PopSelf { get; private set; }
     }
 
-    internal sealed class PushRegisteredStateEvent : PdStateEvent
+    internal sealed class PushRegisteredStateEvent : PdStateEvent<PushRegisteredStateEvent>
     {
-        private static readonly PushRegisteredStateEvent _instance = new PushRegisteredStateEvent();
-
         public static PushRegisteredStateEvent GetInstance(Type type, bool popSelf)
         {
-            _instance.Type = type;
-            _instance.PopSelf = popSelf;
-            return _instance;
+            var instance = GetInstance();
+            instance.Type = type;
+            instance.PopSelf = popSelf;
+            return instance;
         }
 
         public Type Type { get; private set; }
         public bool PopSelf { get; private set; }
     }
 
-    internal sealed class PushRegisteredStatesEvent : PdStateEvent
+    internal sealed class PushRegisteredStatesEvent : PdStateEvent<PushRegisteredStatesEvent>
     {
-        private static readonly PushRegisteredStatesEvent _instance = new PushRegisteredStatesEvent();
-
         public static PushRegisteredStatesEvent GetInstance(Type[] stateTypes, bool popSelf)
         {
-            _instance.StateTypes = stateTypes;
-            _instance.PopSelf = popSelf;
-            return _instance;
+            var instance = GetInstance();
+            instance.StateTypes = stateTypes;
+            instance.PopSelf = popSelf;
+            return instance;
         }
 
         public Type[] StateTypes { get; private set; }
         public bool PopSelf { get; private set; }
     }
 
-    internal sealed class PopEvent : PdStateEvent
+    internal sealed class PopEvent : PdStateEvent<PopEvent>
     {
-        private static readonly PopEvent _instance = new PopEvent();
-
-        public static PopEvent GetInstance()
-        {
-            return _instance;
-        }
     }
 
-    internal abstract class RaiseMessageEvent : PdStateEvent
+    internal sealed class RaiseMessageEvent : PdStateEvent<RaiseMessageEvent>
     {
-        public abstract IStateMessageHandler MessageHandler { get; }
-    }
+        public IStateMessageHandler MessageHandler { get; private set; }
 
-    internal sealed class RaiseMessageEvent<T> : RaiseMessageEvent where T : IStateMessage
-    {
-        private static readonly RaiseMessageEvent<T> _instance = new RaiseMessageEvent<T>();
-
-        public static RaiseMessageEvent<T> GetInstance(T message)
+        public static RaiseMessageEvent GetInstance<T>(T message) where T : IStateMessage
         {
-            _instance._messageHandler.Message = message;
-            return _instance;
+            var instance = GetInstance();
+            var messageHandler = new StateMessageHandler<T>
+            {
+                Message = message
+            };
+            instance.MessageHandler = messageHandler;
+            return instance;
         }
-
-        private readonly StateMessageHandler<T> _messageHandler = new();
-        public override IStateMessageHandler MessageHandler => _messageHandler;
     }
 }
