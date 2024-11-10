@@ -184,7 +184,8 @@ namespace PdStateMachine
         {
             switch (pdStateEvent)
             {
-                case ContinueEvent _:
+                case ContinueEvent continueEvent:
+                    ContinueEvent.ReturnInstance(continueEvent);
                     break;
                 case PushSubStateEvent pushStateEvent:
                     if (pushStateEvent.PopSelf)
@@ -193,6 +194,7 @@ namespace PdStateMachine
                     }
 
                     PushState(pushStateEvent.State);
+                    PushSubStateEvent.ReturnInstance(pushStateEvent);
                     break;
                 case PushSubStatesEvent pushStatesEvent:
                     if (pushStatesEvent.PopSelf)
@@ -201,6 +203,7 @@ namespace PdStateMachine
                     }
 
                     PushStates(pushStatesEvent.States);
+                    PushSubStatesEvent.ReturnInstance(pushStatesEvent);
                     break;
                 case PushRegisteredStateEvent pushRegisteredStateEvent:
                     if (pushRegisteredStateEvent.PopSelf)
@@ -209,6 +212,7 @@ namespace PdStateMachine
                     }
 
                     PushState(GetRegisteredState(pushRegisteredStateEvent.Type));
+                    PushRegisteredStateEvent.ReturnInstance(pushRegisteredStateEvent);
                     break;
                 case PushRegisteredStatesEvent pushRegisteredStatesEvent:
                     if (pushRegisteredStatesEvent.PopSelf)
@@ -217,13 +221,16 @@ namespace PdStateMachine
                     }
 
                     PushStates(pushRegisteredStatesEvent.StateTypes);
+                    PushRegisteredStatesEvent.ReturnInstance(pushRegisteredStatesEvent);
                     break;
-                case PopEvent _:
+                case PopEvent popEvent:
                     PopState();
+                    PopEvent.ReturnInstance(popEvent);
                     break;
 
                 case RaiseMessageEvent raiseMessageEvent:
                     RaiseMessage(raiseMessageEvent.MessageHandler, _current.State);
+                    RaiseMessageEvent.ReturnInstance(raiseMessageEvent);
                     break;
             }
         }
