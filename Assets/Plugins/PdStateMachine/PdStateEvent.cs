@@ -63,8 +63,10 @@ namespace PdStateMachine
         internal static void ReturnInstance(T instance) => eventPool.Release(instance);
     }
 
-    internal sealed class ContinueEvent : PdStateEvent<ContinueEvent>
+    internal sealed class ContinueEvent : PdStateEvent
     {
+        public static ContinueEvent GetInstance() => instance;
+        private static readonly ContinueEvent instance = new();
     }
 
     internal sealed class PushSubStateEvent : PdStateEvent<PushSubStateEvent>
@@ -123,8 +125,10 @@ namespace PdStateMachine
         public bool PopSelf { get; private set; }
     }
 
-    internal sealed class PopEvent : PdStateEvent<PopEvent>
+    internal sealed class PopEvent : PdStateEvent
     {
+        public static PopEvent GetInstance() => instance;
+        private static readonly PopEvent instance = new();
     }
 
     internal sealed class RaiseMessageEvent : PdStateEvent<RaiseMessageEvent>
